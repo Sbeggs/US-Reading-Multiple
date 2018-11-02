@@ -1,4 +1,3 @@
-
 // define all Digital Pins for Mega(Even is Trig, Odd is Echo)
 #define TrigB 24
 #define EchoB 25
@@ -12,10 +11,14 @@
 #define EchoR 33
 #define TrigL 34
 #define EchoL 35
-
+// Changes Parameters
 #define WaitForEcho 10
 #define WackValue 10000
 #define DurationCheck 10
+
+//Declaring the Final Array
+double DisArray[6];
+char Names [8] = {'F', 'F', 'R', 'F', 'L', 'R', 'L', 'B'};
 
 
 long durationF;
@@ -123,37 +126,68 @@ void loop() {
   // Checks to see if change in duration, if not calculate distance and print!
   if (abs(old_durationF - durationF) > DurationCheck) {
     distanceF = .0343 * durationF / 2;
-    Serial.print("Your distanceF is ");
-    Serial.println(distanceF);
+   //Serial.print("Your distanceF is ");
+   //Serial.println(distanceF);
   }
   if (abs(old_durationB - durationB) > DurationCheck) {
     distanceB = .0343 * durationB / 2;
-    Serial.print("Your distanceB is ");
-    Serial.println(distanceB);
+   //Serial.print("Your distanceB is ");
+   //Serial.println(distanceB);
   }
 
   if (abs(old_durationFR - durationFR) > DurationCheck) {
     distanceFR = .0343 * durationFR / 2;
-    Serial.print("Your distanceFR is ");
-    Serial.println(distanceFR);
+  //Serial.print("Your distanceFR is ");
+   //Serial.println(distanceFR);
   }
   if (abs(old_durationFL - durationFL) > DurationCheck) {
     distanceFL = .0343 * durationFL / 2;
-    Serial.print("Your distanceFL is ");
-    Serial.println(distanceFL);
+  //Serial.print("Your distanceFL is ");
+    //Serial.println(distanceFL);
   }
   if (abs(old_durationR - durationR) > DurationCheck) {
     distanceR = .0343 * durationR / 2;
-    Serial.print("Your distanceR is ");
-    Serial.println(distanceR);
+   //Serial.print("Your distanceR is ");
+   //Serial.println(distanceR);
   }
   if (abs(old_durationL - durationL) > DurationCheck) {
     distanceL = .0343 * durationL / 2;
-    Serial.print("Your distanceL is ");
-    Serial.println(distanceL);
+   //Serial.print("Your distanceL is ");
+   //Serial.println(distanceL);
   }
+  DisArray[0] = distanceF;
+  DisArray[1] = distanceB;
+  DisArray[2] = distanceFR; 
+  DisArray[3] = distanceFL;
+  DisArray[4] = distanceR;
+  DisArray[5] = distanceL;
   delay(100);
 
+  
+  Serial.print(Names[0]);
+  Serial.print(",    ");
+  Serial.print(Names[1]);
+  Serial.print(Names[2]);
+  Serial.print(",    ");
+  Serial.print(Names[3]);
+  Serial.print(Names[4]);
+  Serial.print(",    ");
+  Serial.print(Names[5]);
+  Serial.print(",    ");
+  Serial.print(Names[6]);
+  Serial.print(",    ");
+  Serial.print(Names[7]);
+  Serial.println("");
+  
+  for (int i = 0; i<= 5; i++){
+    Serial.print(DisArray[i]);
+    Serial.print(", ");
+  }
+  Serial.println("");
+  Serial.println("");
+
+
+  
   old_durationF = durationF;
   old_durationB = durationB;
   old_durationFR = durationFR;
