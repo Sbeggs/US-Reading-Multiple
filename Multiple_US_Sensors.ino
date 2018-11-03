@@ -16,10 +16,12 @@
 #define WackValue 10000 // the Value above which we consider the value not real
 #define DurationCheck 10 // Check to see if old duration is different enough from current reading
 #define MinObsDis 10 // distance we consider to be unsafe in cm
+#define Close 4 // What we consider too close to wall
+#define SensorSpace 10 // space between sensors
 
 //initiate Serial Communication (Mega is Master)
-#include <Wire.h>
-#define SlaveAddress 1
+//#include <Wire.h>
+//#define SlaveAddress 1
 
 
 //Declaring the Distance Array
@@ -133,34 +135,28 @@ void loop() {
   // Checks to see if change in duration, if not calculate distance and print!
   if (abs(old_durationF - durationF) > DurationCheck) {
     distanceF = .0343 * durationF / 2;
-    //Serial.print("Your distanceF is ");
-    //Serial.println(distanceF);
+
   }
   if (abs(old_durationB - durationB) > DurationCheck) {
     distanceB = .0343 * durationB / 2;
-    //Serial.print("Your distanceB is ");
-    //Serial.println(distanceB);
+
   }
 
   if (abs(old_durationFR - durationFR) > DurationCheck) {
     distanceFR = .0343 * durationFR / 2;
-    //Serial.print("Your distanceFR is ");
-    //Serial.println(distanceFR);
+
   }
   if (abs(old_durationFL - durationFL) > DurationCheck) {
     distanceFL = .0343 * durationFL / 2;
-    //Serial.print("Your distanceFL is ");
-    //Serial.println(distanceFL);
+
   }
   if (abs(old_durationR - durationR) > DurationCheck) {
     distanceR = .0343 * durationR / 2;
-    //Serial.print("Your distanceR is ");
-    //Serial.println(distanceR);
+
   }
   if (abs(old_durationL - durationL) > DurationCheck) {
     distanceL = .0343 * durationL / 2;
-    //Serial.print("Your distanceL is ");
-    //Serial.println(distanceL);
+
   }
   DisArray[0] = distanceF;
   DisArray[1] = distanceFR;
@@ -219,7 +215,7 @@ void checkForward(double A[6]) {
     return;
   }
   else {
-   // stopLocomotion(); possible function that sends stop signal
+    // stopLocomotion(); possible function that sends stop signal
     checkSides(A);
   }
 
@@ -241,7 +237,7 @@ void checkSides(double A[6]) {
 
   }
   else if (A [2] >= MinObsDis) {
-    
+
     Serial.println("Turning Left!");
     turnRight();
     delay (200);// wait for the turn to happen perhaps use Wire.read()
@@ -251,7 +247,7 @@ void checkSides(double A[6]) {
     delay (200);//  wait for the turn to happen perhaps use Wire.read()
     return;
   }
-  else if( A [5] >= MinObsDis) {
+  else if ( A [5] >= MinObsDis) {
     Serial.println("Going Back!");
     turnRight();
     delay(200); // wait for the turn to happen (maybe the uno tells us once this is done)
@@ -264,29 +260,56 @@ void checkSides(double A[6]) {
 void moveForward() {
   delay(10);
   /*Wire.beginTransmission(SlaveAddress);
-   Wire.write('w');
-   Wire.endTransmission();
-   */ 
+    Wire.write('w');
+    Wire.endTransmission();
+  */
   Serial.println('f');
 }
 
 
 void turnRight() {
   delay(10);
-  /*Wire.beginTransmission(SlaveAddress);
-   Wire.write('d');
-   Wire.endTransmission();
-   */
   Serial.println('d');
 }
 
-void checkAlign () { 
-   /* Function that checks allignment, looks to see if the two R sensors are within a range (small enough, means close to wall, 
-    *  checks hos different they are and sends value to reallign, if they are out of range we don't care 
-   *  Does the same for the left
-   */
+void checkAlign () {
+  /* Function that checks allignment, looks to see if the two R sensors are within a range (small enough = close to wall),
+      checks how different they are and sends value to reallign, if they are out of range we don't care
+     Does the same for the left
+  */
+  double Difference;
+  //bool SpinRight;
+  double Angle = 0;
+  if (DisArray[1] < Close && DisArray[3] < Close ) {
+       Difference = (DisArray[1] - DisArray [3]);
+       if (abs(Difference)> 1.5){
+        //if (Difference > 0) SpinRight = true;
+        //else SpinRight = false;
+        Angle = asin (Difference/SensorSpace);
+        }
+        
+        
 
-  if(DisArray[1] > 15 || DisArray[3] > 15) {
-    
+  }
+   else if (DisArray[2] < Close && DisArray[4] < Close){
+       Difference = DisArray[2] - DisArray [4];
+       if (abs(Difference)> 1.5){
+        //if (Difference > 0) SpinRight = false;
+        // else SpinRight = true;
+        Angle = asin(Difference/SensorSpace); 
+       }
+        
+   }
+
+   Turn(Angle);
+
+     
+  return;
 }
+
+void Turn (double Angle){
+/* Send angle to other bord, it decideds how much we change.
+ *  
+ */
+  
 }
