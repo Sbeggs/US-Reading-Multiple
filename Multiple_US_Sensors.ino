@@ -1,25 +1,31 @@
 // define all Digital Pins for Mega(Even is Trig, Odd is Echo)
-#define TrigB 24
-#define EchoB 25
+#define TrigB 34
+#define EchoB 35
 #define TrigFR 26
 #define EchoFR 27
-#define TrigFL 28
-#define EchoFL 29
-#define TrigF 30
-#define EchoF 31
-#define TrigR 32
-#define EchoR 33
-#define TrigL 34
-#define EchoL 35
-// Changes Parameters
-#define WaitForEcho 10
-#define WackValue 10000
-#define DurationCheck 10
+#define TrigFL 24
+#define EchoFL 25
+#define TrigF 32
+#define EchoF 33
+#define TrigR 28
+#define EchoR 29
+#define TrigL 30
+#define EchoL 31
+// define various Parameters
+#define WaitForEcho 10 // how long the US sensors wait for the echo (in microseconds)
+#define WackValue 10000 // the Value above which we consider the value not real
+#define DurationCheck 10 // Check to see if old duration is different enough from current reading
+#define MinObsDis 10 // distance we consider to be unsafe in cm
 
-//Declaring the Final Array
+//initiate Serial Communication (Mega is Master)
+#include <Wire.h>
+#define SlaveAddress 1
+
+
+//Declaring the Distance Array
 double DisArray[6];
-char Names [8] = {'F', 'F', 'R', 'F', 'L', 'R', 'L', 'B'};
-
+// DisArray is indexed as follows *0* is Forward, *1* is Forward Right, *2* is Forward Left, *3* Rear R, *4* Rear L, *5* is backwards
+char Names [8] = {'F', 'F', 'R', 'F', 'L', 'R', 'L', 'B'}; // names of Values for read outs, just for debugging
 
 long durationF;
 double distanceF;
@@ -54,6 +60,8 @@ void setup() {
   pinMode(TrigB, OUTPUT);
   pinMode(EchoB, INPUT);
   Serial.begin(9600);
+  Wire.begin();
+
 }
 
 void loop() {
@@ -69,7 +77,6 @@ void loop() {
 
   // Sets TriggerF on for WaitForEcho useconds
   digitalWrite(TrigF, HIGH);
-
   delayMicroseconds(WaitForEcho);
   digitalWrite(TrigF, LOW);
 
@@ -126,44 +133,45 @@ void loop() {
   // Checks to see if change in duration, if not calculate distance and print!
   if (abs(old_durationF - durationF) > DurationCheck) {
     distanceF = .0343 * durationF / 2;
-   //Serial.print("Your distanceF is ");
-   //Serial.println(distanceF);
+    //Serial.print("Your distanceF is ");
+    //Serial.println(distanceF);
   }
   if (abs(old_durationB - durationB) > DurationCheck) {
     distanceB = .0343 * durationB / 2;
-   //Serial.print("Your distanceB is ");
-   //Serial.println(distanceB);
+    //Serial.print("Your distanceB is ");
+    //Serial.println(distanceB);
   }
 
   if (abs(old_durationFR - durationFR) > DurationCheck) {
     distanceFR = .0343 * durationFR / 2;
-  //Serial.print("Your distanceFR is ");
-   //Serial.println(distanceFR);
+    //Serial.print("Your distanceFR is ");
+    //Serial.println(distanceFR);
   }
   if (abs(old_durationFL - durationFL) > DurationCheck) {
     distanceFL = .0343 * durationFL / 2;
-  //Serial.print("Your distanceFL is ");
+    //Serial.print("Your distanceFL is ");
     //Serial.println(distanceFL);
   }
   if (abs(old_durationR - durationR) > DurationCheck) {
     distanceR = .0343 * durationR / 2;
-   //Serial.print("Your distanceR is ");
-   //Serial.println(distanceR);
+    //Serial.print("Your distanceR is ");
+    //Serial.println(distanceR);
   }
   if (abs(old_durationL - durationL) > DurationCheck) {
     distanceL = .0343 * durationL / 2;
-   //Serial.print("Your distanceL is ");
-   //Serial.println(distanceL);
+    //Serial.print("Your distanceL is ");
+    //Serial.println(distanceL);
   }
   DisArray[0] = distanceF;
-  DisArray[1] = distanceB;
-  DisArray[2] = distanceFR; 
-  DisArray[3] = distanceFL;
-  DisArray[4] = distanceR;
-  DisArray[5] = distanceL;
-  delay(100);
+  DisArray[1] = distanceFR;
+  DisArray[2] = distanceFL;
+  DisArray[3] = distanceR;
+  DisArray[4] = distanceL;
+  DisArray[5] = distanceB;
+  delay(1000);
 
-  
+  checkForward(DisArray);
+
   Serial.print(Names[0]);
   Serial.print(",    ");
   Serial.print(Names[1]);
@@ -178,8 +186,8 @@ void loop() {
   Serial.print(",    ");
   Serial.print(Names[7]);
   Serial.println("");
-  
-  for (int i = 0; i<= 5; i++){
+
+  for (int i = 0; i <= 5; i++) {
     Serial.print(DisArray[i]);
     Serial.print(", ");
   }
@@ -187,7 +195,7 @@ void loop() {
   Serial.println("");
 
 
-  
+
   old_durationF = durationF;
   old_durationB = durationB;
   old_durationFR = durationFR;
@@ -195,4 +203,90 @@ void loop() {
   old_durationR = durationR;
   old_durationL = durationL;
 
+
+}
+
+//
+void checkForward(double A[6]) {
+  /* function that checks the forward IR sensor (first value in array) is sensing anything in front of it,
+      if not move forward function, wait for forward function to complete and then return to read values
+      if so it begins side check
+  */
+  Serial.println("Checking Forward!");
+  if (A[0] >= MinObsDis) {
+    moveForward();
+    delay(200); // wait for the turn to happen (maybe the uno tells us once this is done)
+    return;
+  }
+  else {
+   // stopLocomotion(); possible function that sends stop signal
+    checkSides(A);
+  }
+
+}
+
+void checkSides(double A[6]) {
+  /* Checks to see if Right side has anything within distance, if so turn right wait for that to complete and then return to
+      measure distances again
+     if not check left, if left is good turn left (make three right turns) and return to read some values
+     if not turn around and go backwards (make two right turns) and return to read some distances
+  */
+  Serial.println("Checking Sides!");
+  if (A [1] >= MinObsDis) {
+    // BackRight Should also be factored in
+    turnRight();
+    Serial.println("Turning Right!");
+    delay(200); //  wait for the turn to happen perhaps use Wire.read()
+    return;
+
+  }
+  else if (A [2] >= MinObsDis) {
+    
+    Serial.println("Turning Left!");
+    turnRight();
+    delay (200);// wait for the turn to happen perhaps use Wire.read()
+    turnRight();
+    delay (200);//  wait for the turn to happen perhaps use Wire.read()
+    turnRight();
+    delay (200);//  wait for the turn to happen perhaps use Wire.read()
+    return;
+  }
+  else if( A [5] >= MinObsDis) {
+    Serial.println("Going Back!");
+    turnRight();
+    delay(200); // wait for the turn to happen (maybe the uno tells us once this is done)
+    turnRight ();
+    delay(200);// wait for the turn to happen (maybe the uno tells us once this is done)
+    return;
+  }
+}
+
+void moveForward() {
+  delay(10);
+  /*Wire.beginTransmission(SlaveAddress);
+   Wire.write('w');
+   Wire.endTransmission();
+   */ 
+  Serial.println('f');
+}
+
+
+void turnRight() {
+  delay(10);
+  /*Wire.beginTransmission(SlaveAddress);
+   Wire.write('d');
+   Wire.endTransmission();
+   */
+  Serial.println('d');
+}
+
+void checkAlign () { 
+   /* Function that checks allignment, looks to see if the two R sensors are within a range (small enough, means close to wall, 
+    *  checks hos different they are and sends value to reallign, if they are out of range we don't care 
+   *  Does the same for the left
+   */
+
+  if(DisArray[1] > 15 || DisArray[3] > 15) {
+    
+}
 }
