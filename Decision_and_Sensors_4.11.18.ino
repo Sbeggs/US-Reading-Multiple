@@ -19,7 +19,7 @@
 #define MinObsDis 10 // distance we consider to be unsafe in cm
 #define Close 4 // What we consider too close to wall
 #define SensorSpace 10 // space between sensors
-#define TurningTime 10000 // in millisex
+#define TurningTime 2500 // in millisex
 
 //Declaring the Distance Array
 double DisArray[6];
@@ -69,10 +69,7 @@ void loop() {
   /* The loop is where we will read all the sensor data, this is the default state of everything, once it receives all the values
       it checks forward. T
   */
-//  if (cnt > 10) {
-//    digitalWrite(52, HIGH);
-//    while (1) {};
-//  }
+
   //turns off trigger
   digitalWrite(TrigF, LOW);
   digitalWrite(TrigB, LOW);
@@ -172,27 +169,27 @@ void loop() {
   DisArray[5] = distanceB;
   //delay(100);
 
-  // never delete this!!!!!!!!! Debugging uses Prints out array of distances for easy debugging
-  //  Serial.print(Names[0]);
-  //  Serial.print(",    ");
-  //  Serial.print(Names[1]);
-  //  Serial.print(Names[2]);
-  //  Serial.print(",    ");
-  //  Serial.print(Names[3]);
-  //  Serial.print(Names[4]);
-  //  Serial.print(",    ");
-  //  Serial.print(Names[5]);
-  //  Serial.print(",    ");
-  //  Serial.print(Names[6]);
-  //  Serial.print(",    ");
-  //  Serial.print(Names[7]);
-  //  Serial.println("");
-  //  for (int i = 0; i <= 5; i++) {
-  //    Serial.print(DisArray[i]);
-  //    Serial.print(", ");
-  //  }
-  //  Serial.println("");
-  //  Serial.println("");
+    ////  never delete this!!!!!!!!! Debugging uses Prints out array of distances for easy debugging
+    Serial.print(Names[0]);
+    Serial.print(",    ");
+    Serial.print(Names[1]);
+    Serial.print(Names[2]);
+    Serial.print(",    ");
+    Serial.print(Names[3]);
+    Serial.print(Names[4]);
+    Serial.print(",    ");
+    Serial.print(Names[5]);
+    Serial.print(",    ");
+    Serial.print(Names[6]);
+    Serial.print(",    ");
+    Serial.print(Names[7]);
+    Serial.println("");
+    for (int i = 0; i <= 5; i++) {
+      Serial.print(DisArray[i]);
+      Serial.print(", ");
+    }
+    Serial.println("");
+    Serial.println("");
 
 
 
@@ -256,8 +253,6 @@ void checkSides(double A[6]) {
 }
 
 void moveForward() {
-
-  cnt++;
   Serial.println("w"); // sends move Forward to the Uno
   waitForResponse();
 }
@@ -307,11 +302,14 @@ void checkAlign () {
 }
 
 void waitForResponse() {
-  delay(10);
+  // Function that waits for a response
+  delay(100);
+  int KylesClear = Serial.read();
   int StartTime = millis();
   while (Serial.available() == 0) {
-    if (millis() - StartTime > TurningTime) break;
-  }
-
+    //if ((millis()-StartTime) > TurningTime)break; // waits for turning time, if matt+katherine's code blows up, this fixes us
+    }
+  KylesClear = Serial.read();
+  //Serial.flush();
 }
 
